@@ -1,0 +1,1958 @@
+[{
+    "id": "3d1b0628731692ed",
+    "type": "tab",
+    "label": "Elbillader v3",
+    "disabled": false,
+    "info": "",
+    "env": []
+}, {
+    "id": "07ea897ca6a322d1",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Sjekk av laderobotens status",
+    "func": "// @ts-ignore\nvar accessToken = flow.get([\"accessToken\"]);\n// @ts-ignore\nvar LaderobotStatusOpMode = flow.get([\"LaderobotStatusOpMode\"]);\n\n//Laderoboten er offline\nif(LaderobotStatusOpMode == 0 ) {\n    // @ts-ignore\n    msg.payload = \"Laderen er offline\";\n    return [msg, null, null, null, null, null, null, null, null];\n}\n\n//Bilen er frakoblet\nelse if (LaderobotStatusOpMode == 1) {\n    // @ts-ignore\n    msg.payload = \"Ingen bil er tilkoblet\";\n    return [null, msg, null, null, null, null, null, null, null];\n}\n\n//Bilen er tilkoblet, men laderoboten venter på bilen eller lastbalansering\nif (LaderobotStatusOpMode == 2 ) {\n    // @ts-ignore\n    msg.payload = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers['Accept'] = 'Application/json';\n    return [null, null, msg, null, null, null, null, null, null];\n}\n\n//Bilen lader, justerer amperen.\nelse if (LaderobotStatusOpMode == 3) {\n    // @ts-ignore\n    msg.payload = null;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    return [null, null, null, msg, null, null, null, null, null];\n}\n\n//Bilen er ferdig ladet, eller har pauset ladingen\nelse if (LaderobotStatusOpMode == 4) {\n    // @ts-ignore\n    msg.payload = \"Bilen har pauset ladingen, eller er ferdig ladet.\";\n    return [null, null, null, null, msg, null, null, null, null];\n}\n\n//Feilmelding på laderoboten\nelse if (LaderobotStatusOpMode == 5) {\n    // @ts-ignore\n    msg.payload = \"Feilmelding på laderoboten\";\n    return [null, null, null, null, null, msg, null, null, null];\n}\n\n//Laderoboten er klar til og lade, men venter på bilen.\nelse if (LaderobotStatusOpMode == 6) {\n    // @ts-ignore\n    msg.payload = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers['Accept'] = 'Application/json';\n   return [null, null, null, null, null, null, msg, null, null];\n}\n\n//Laderen venter på autorisasjon til og starte ladingen\nelse if (LaderobotStatusOpMode == 7) {\n    // @ts-ignore\n    msg.payload = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers['Accept'] = 'Application/json';\n\n    return [null, null, null, null, null, null, null, msg, null];\n}\n\n//Laderen deautoriseser ladningen\nelse if (LaderobotStatusOpMode == 8) {\n    // @ts-ignore\n    msg.payload = \"Laderen venter på autorisasjon til og starte ladingen\";\n    return [null, null, null, null, null, null, null, null, msg];\n}",
+    "outputs": 9,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 1260,
+    "wires": [
+        [],
+        [],
+        ["aaaa3968d6f1506f"],
+        ["7ad5a8fb19f7d7eb"],
+        [],
+        [],
+        ["7ad5a8fb19f7d7eb"],
+        ["e05204a6ef48e837"],
+        []
+    ]
+}, {
+    "id": "83556d2779fd40ee",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Konto pålogging",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.easee.com/api/accounts/login",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [{
+        "keyType": "other",
+        "keyValue": "accept",
+        "valueType": "other",
+        "valueValue": "application/json"
+    }, {
+        "keyType": "other",
+        "keyValue": "content-type",
+        "valueType": "other",
+        "valueValue": "application/*+json"
+    }],
+    "x": 940,
+    "y": 140,
+    "wires": [
+        ["f0295d19e0b528bd", "2a70405291358ee5"]
+    ]
+}, {
+    "id": "f0295d19e0b528bd",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Lagre-accessToken",
+    "func": "var accessToken = null;\nvar refreshToken = null;\nvar accessTokenRefreshInterval = null;\n\n// @ts-ignore\nflow.set(\"accessToken\", msg.payload.accessToken);\n// @ts-ignore\nflow.set(\"refreshToken\", msg.payload.refreshToken);\n\naccessTokenRefreshInterval = msg.payload.expiresIn;\n\n//Oppdateringsfrekvens er accessToken refresh intervall på 3600 - 300 sekunder.\nmsg.delay = Number((accessTokenRefreshInterval) * 1000) - 240000;\nmsg.payload = accessTokenRefreshInterval;\n\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 450,
+    "y": 240,
+    "wires": [
+        ["3542ab4b15c00217"]
+    ]
+}, {
+    "id": "f9496700e50945d7",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Autentiserer og henter tokens fra Easee",
+    "info": "",
+    "x": 510,
+    "y": 60,
+    "wires": []
+}, {
+    "id": "2a70405291358ee5",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Easee - Autentiser",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1310,
+    "y": 140,
+    "wires": []
+}, {
+    "id": "3542ab4b15c00217",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "msg.delay",
+    "pauseType": "delayv",
+    "timeout": "20",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 790,
+    "y": 240,
+    "wires": [
+        ["0a8091f404451df6", "4c91741f1042e2eb"]
+    ]
+}, {
+    "id": "4c91741f1042e2eb",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Refresh accessToken",
+    "func": "// @ts-ignore\nvar accessToken = flow.get(\"accessToken\");\n// @ts-ignore\nvar refreshToken = flow.get(\"refreshToken\");\n\n// @ts-ignore\nmsg.headers = {};\n// @ts-ignore\nmsg.headers['Authorization'] = 'Bearer ' + accessToken;\n\nmsg.payload = {\"accessToken\":accessToken,\"refreshToken\":refreshToken}\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1100,
+    "y": 240,
+    "wires": [
+        ["0a8091f404451df6", "7b92d0128ef34c06"]
+    ]
+}, {
+    "id": "0a8091f404451df6",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Easee - Refresh accessToken",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 490,
+    "y": 520,
+    "wires": []
+}, {
+    "id": "3c36b08aae2ded2e",
+    "type": "inject",
+    "z": "3d1b0628731692ed",
+    "name": "Manuell trigger",
+    "props": [{
+        "p": "payload"
+    }, {
+        "p": "topic",
+        "vt": "str"
+    }],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 160,
+    "y": 140,
+    "wires": [
+        ["b0e13e214a634999"]
+    ]
+}, {
+    "id": "7b92d0128ef34c06",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Refresh tokens",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.easee.com/api/accounts/refresh_token",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 180,
+    "y": 380,
+    "wires": [
+        ["0a8091f404451df6", "4dd2c9396a88bae0"]
+    ]
+}, {
+    "id": "4dd2c9396a88bae0",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "pauseType": "rate",
+    "timeout": "5",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "60",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 480,
+    "y": 380,
+    "wires": [
+        ["f0295d19e0b528bd"]
+    ]
+}, {
+    "id": "b0e13e214a634999",
+    "type": "credentials",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "props": [{
+        "value": "payload",
+        "type": "msg"
+    }],
+    "x": 430,
+    "y": 140,
+    "wires": [
+        ["0c2635d95d593ca5"]
+    ]
+}, {
+    "id": "0c2635d95d593ca5",
+    "type": "json",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 670,
+    "y": 140,
+    "wires": [
+        ["83556d2779fd40ee"]
+    ]
+}, {
+    "id": "e05204a6ef48e837",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Start/Godkjenn lading",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "body",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/commands/start_charging",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1240,
+    "y": 1280,
+    "wires": [
+        ["8e3a615ffc8da8f3", "06f504f2bf35b316"]
+    ]
+}, {
+    "id": "149a7569abe1f48f",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Fortsette lading",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "body",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/commands/resume_charging",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1200,
+    "y": 1740,
+    "wires": [
+        ["8e3a615ffc8da8f3"]
+    ]
+}, {
+    "id": "9edb6be75d58f0e2",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Sett ampere til 6A",
+    "func": "//Hente access token fra flow-en\n// @ts-ignore\nvar accessToken = flow.get([\"accessToken\"]);\nvar Ampere = 6;\nmsg.payload = { \"dynamicChargerCurrent\": Ampere }\n// @ts-ignore\nmsg.headers = {};\n// @ts-ignore\nmsg.headers['Authorization'] = 'Bearer ' + accessToken;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1690,
+    "y": 1280,
+    "wires": [
+        ["4d947e10b0cd46cc"]
+    ]
+}, {
+    "id": "4d947e10b0cd46cc",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Sette ampere",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/settings/",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1730,
+    "y": 1060,
+    "wires": [
+        ["8277508f4b85f5d0", "06f504f2bf35b316"]
+    ]
+}, {
+    "id": "76a0393ad471b263",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Strømforbruk uten elbillader",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "sensor.stromforbruk_uten_elbillader",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 920,
+    "y": 1220,
+    "wires": [
+        ["05d015e2320f6ffb"]
+    ]
+}, {
+    "id": "05d015e2320f6ffb",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Utregning av ladeeffekt (Ampere)",
+    "func": "//Hente access token fra flow-en\n// @ts-ignore\nvar accessToken = flow.get([\"accessToken\"]);\n\n//Hente ladestatus i fra Flowen\n// @ts-ignore\nvar LaderobotStatusOpMode = flow.get([\"LaderobotStatusOpMode\"]);\n\n//Hente Fase i fra Flowen\n// @ts-ignore\nvar LaderobotStatusOutputPhase = flow.get([\"LaderobotStatusOutputPhase\"]);\n\n//Hente faktisk satt Ampere i Easee laderoboten\n// @ts-ignore\nvar LaderobotOutputCurrent = flow.get([\"LaderobotOutputCurrent\"]);\n\n//Hente nåværende Ampere i fra flow-en\n// @ts-ignore\nvar TidligereKalkulertAmpere = flow.get([\"TidligereKalkulertAmpere\"]);\n\n// Husets strømforbruk uten Elbil lader\n// @ts-ignore\nvar StromforbrukUtenElbillader = msg.payload;\n\n//Effektledd i fra AMS-måleren\n// @ts-ignore\nvar Effektledd = flow.get([\"ams-effektledd\"]);\n\n//Maks strømforbruk Totalt\nvar MaksWatt = null;\n\n//Hvilken fase lader bilen på, Easee laderen må rapportere dette.\nif (LaderobotStatusOutputPhase == 10 || \n    LaderobotStatusOutputPhase == 11 || \n    LaderobotStatusOutputPhase == 12 || \n    LaderobotStatusOutputPhase == 13 || \n    LaderobotStatusOutputPhase == 14 || \n    LaderobotStatusOutputPhase == 15 ) {\n    var Fase = 1;\n}\nelse if (LaderobotStatusOutputPhase == 20 || \n    LaderobotStatusOutputPhase == 21 || \n    LaderobotStatusOutputPhase == 22 || \n    LaderobotStatusOutputPhase == 30) {\n    var Fase = 3;\n}\n//Hvor mye Ampere skal det lades med.\nvar NyKalkulertAmpere = null;\n\n//Hvilken Volt er det, rapporteres i fra AMS-måleren.\n// @ts-ignore\nvar Volt = flow.get(\"ams-spenning\");\n\nif (Effektledd == 5) {\n    MaksWatt = 4500; \n    }\nelse if (Effektledd == 10 ) {\n    MaksWatt = 9000; \n    }\n\n//Tilgjengelig strøm til elbillading.\n// @ts-ignore\nvar TilgjengeligStrom = MaksWatt - StromforbrukUtenElbillader;\n\n//Regner ut hvilken ampere om 3fase lading er på.\nif (Fase == 3) {\n    NyKalkulertAmpere = TilgjengeligStrom / (Math.sqrt(Fase) * Volt);\n    NyKalkulertAmpere = Math.trunc(NyKalkulertAmpere);\n    //Om Ampere er større enn 32, sett den til 32.\n    if (NyKalkulertAmpere > 32) {\n        NyKalkulertAmpere = 32;\n    }\n}\n\n//Regner ut hvilken ampere om 1fase lading er på.\nif (Fase == 1) {\n    NyKalkulertAmpere = TilgjengeligStrom / Volt;\n    NyKalkulertAmpere = Math.trunc(NyKalkulertAmpere);\n    //Om Ampere er større enn 32, sett den til 32.\n    if (NyKalkulertAmpere > 32) {\n        NyKalkulertAmpere = 32;\n    }\n}\n\n//Om ny ampere er under 6, sett lading på pause\nif (NyKalkulertAmpere < 6) {\n    // @ts-ignore\n    msg.payload = null;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    return [null, msg, null];\n}\n\n//Om tidligere kalkulert ampere og ny kalkulert ampere er ulik, og bilen lader\nelse if ((TidligereKalkulertAmpere != NyKalkulertAmpere ) && LaderobotStatusOpMode == 3) {\n    // @ts-ignore\n    flow.set([\"TidligereKalkulertAmpere\"], NyKalkulertAmpere);\n    // @ts-ignore\n    msg.payload = { \"dynamicChargerCurrent\": NyKalkulertAmpere }\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    return [msg, null, null ];\n}\n\n//Om ny kalkulert ampere og laderobotens faktisk ampere er ulik\nelse if ((LaderobotOutputCurrent != NyKalkulertAmpere) && LaderobotStatusOpMode == 3) {\n    // @ts-ignore\n    flow.set([\"TidligereKalkulertAmpere\"], NyKalkulertAmpere);\n    // @ts-ignore\n    msg.payload = { \"dynamicChargerCurrent\": NyKalkulertAmpere }\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    return [msg, null, null];\n}\n\n//Om kalkulert ampere er lik tidligere kalkulert ampere, og er lik den faktisk satte amperen i laderoboten\nelse if (TidligereKalkulertAmpere == NyKalkulertAmpere && NyKalkulertAmpere == LaderobotOutputCurrent) {\n    // @ts-ignore\n    msg.payload = \"Ingen endring - Utregnet \" + NyKalkulertAmpere + \"A - \" + Fase + \"-fase, lader innstilt på: \" + LaderobotOutputCurrent + \"A\";\n    return [null, null, msg];\n}",
+    "outputs": 3,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1320,
+    "y": 1080,
+    "wires": [
+        ["4d947e10b0cd46cc", "8277508f4b85f5d0"],
+        ["05f7a89370b70f9e", "dc81f874aabedf28"],
+        ["39b7c02a05309825"]
+    ]
+}, {
+    "id": "39b7c02a05309825",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ingen endring i ampere",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1310,
+    "y": 1180,
+    "wires": []
+}, {
+    "id": "e6857a72de9c7a1f",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Automasjon av laderoboten",
+    "info": "",
+    "x": 240,
+    "y": 680,
+    "wires": []
+}, {
+    "id": "890b2ccb5a7d9b45",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Hente-Lagret-AccessTokens",
+    "func": "// @ts-ignore\nvar accessToken = flow.get([\"accessToken\"]);\n\nmsg.payload = 'Bearer ' + accessToken;\n//msg.headers = {};\n//msg.headers['Authorization'] = 'Bearer ' + accessToken;\n//msg.headers['Accept'] = 'Application/json';\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 460,
+    "y": 760,
+    "wires": [
+        ["6d27e1378d527e38"]
+    ]
+}, {
+    "id": "6d27e1378d527e38",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Hente ladestatus",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/state",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [{
+        "keyType": "Accept",
+        "keyValue": "",
+        "valueType": "application/json",
+        "valueValue": ""
+    }, {
+        "keyType": "Authorization",
+        "keyValue": "",
+        "valueType": "msg",
+        "valueValue": "payload"
+    }],
+    "x": 800,
+    "y": 760,
+    "wires": [
+        ["cb2f5807a1d3c356", "06f504f2bf35b316"]
+    ]
+}, {
+    "id": "cb2f5807a1d3c356",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Analysere ladestatus fra Easee",
+    "func": "var resultatFraEasee = msg.payload;\nvar LaderobotStatusOpMode = msg.payload.chargerOpMode;\nvar LaderobotStatusOutputPhase = msg.payload.outputPhase;\nvar LaderobotOutputCurrent = msg.payload.outputCurrent;\nvar LaderobotTotalPower = msg.payload.totalPower;\n// @ts-ignore\nflow.set(\"LaderobotStatusOpMode\", LaderobotStatusOpMode);\n// @ts-ignore\nflow.set(\"LaderobotStatusOutputPhase\", LaderobotStatusOutputPhase);\n// @ts-ignore\nflow.set(\"LaderobotOutputCurrent\", LaderobotOutputCurrent);\n// @ts-ignore\nflow.set(\"LaderobotTotalPower\", LaderobotTotalPower);\n\nmsg.payload = resultatFraEasee;\n\nreturn msg;\n",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 230,
+    "y": 840,
+    "wires": [
+        ["b7fe0df36bae6ab9", "07ea897ca6a322d1"]
+    ]
+}, {
+    "id": "b7fe0df36bae6ab9",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ladestatus",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 840,
+    "wires": []
+}, {
+    "id": "64869fd9eef33f7d",
+    "type": "switch",
+    "z": "3d1b0628731692ed",
+    "name": "Uautorisert",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [{
+        "t": "cont",
+        "v": "{\"message\":\"Unauthorized\"}",
+        "vt": "str"
+    }],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 2090,
+    "y": 1520,
+    "wires": [
+        ["c9db90fe1f7d7727", "b0e13e214a634999"]
+    ]
+}, {
+    "id": "06f504f2bf35b316",
+    "type": "json",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "property": "payload",
+    "action": "",
+    "pretty": false,
+    "x": 2070,
+    "y": 1460,
+    "wires": [
+        ["64869fd9eef33f7d"]
+    ]
+}, {
+    "id": "c9db90fe1f7d7727",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Uautorisert debugnode",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2130,
+    "y": 1580,
+    "wires": []
+}, {
+    "id": "687aebe14107d07b",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Easee - Uautorisert",
+    "info": "",
+    "x": 2090,
+    "y": 1420,
+    "wires": []
+}, {
+    "id": "536a57ef1519e07d",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Sjekker at Tesla er hjemme",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "home",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "device_tracker.tesla_model_3_location_tracker",
+    "state_type": "str",
+    "blockInputOverrides": true,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 200,
+    "y": 1660,
+    "wires": [
+        ["09554aa0a15687b0"],
+        []
+    ]
+}, {
+    "id": "09554aa0a15687b0",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Er Tesla koblet til laderen?",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "true",
+    "halt_if_type": "bool",
+    "halt_if_compare": "is",
+    "entity_id": "binary_sensor.tesla_model_3_charger",
+    "state_type": "habool",
+    "blockInputOverrides": true,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 200,
+    "y": 1740,
+    "wires": [
+        ["cddd04a69e4c4b32", "884768cf75f84f4c"],
+        []
+    ]
+}, {
+    "id": "cddd04a69e4c4b32",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Powersave - Lade Tesla?",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "true",
+    "halt_if_type": "bool",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.automasjon_powersaver_lade_tesla",
+    "state_type": "habool",
+    "blockInputOverrides": true,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 190,
+    "y": 1820,
+    "wires": [
+        ["149a7569abe1f48f", "8362b5bb962ea127"],
+        ["05f7a89370b70f9e"]
+    ]
+}, {
+    "id": "8277508f4b85f5d0",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ampere til Easee, og svar fra Easee",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1760,
+    "y": 1140,
+    "wires": []
+}, {
+    "id": "8e3a615ffc8da8f3",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "pauseType": "delay",
+    "timeout": "3",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1500,
+    "y": 1280,
+    "wires": [
+        ["9edb6be75d58f0e2"]
+    ]
+}, {
+    "id": "05f7a89370b70f9e",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easse API - Pause lading",
+    "method": "POST",
+    "ret": "txt",
+    "paytoqs": "body",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/commands/pause_charging",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1190,
+    "y": 1860,
+    "wires": [
+        ["06f504f2bf35b316"]
+    ]
+}, {
+    "id": "8362b5bb962ea127",
+    "type": "http request",
+    "z": "3d1b0628731692ed",
+    "name": "Easee API - Aktiver Smart Lading",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "body",
+    "url": "https://api.easee.com/api/chargers/CHANGEME/commands/smart_charging ",
+    "tls": "d2be3a070d2c8c37",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 1220,
+    "y": 1800,
+    "wires": [
+        ["06f504f2bf35b316"]
+    ]
+}, {
+    "id": "884768cf75f84f4c",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Manuelt lading er aktivert",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "on",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.tesla_lading_manuelt",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 210,
+    "y": 1880,
+    "wires": [
+        ["8362b5bb962ea127", "149a7569abe1f48f"],
+        []
+    ]
+}, {
+    "id": "fca5eb85a8ee8808",
+    "type": "poll-state",
+    "z": "3d1b0628731692ed",
+    "name": "AMS - Effektledd",
+    "server": "ed1ce5cc.927bb8",
+    "version": 2,
+    "exposeToHomeAssistant": false,
+    "haConfig": [{
+        "property": "name",
+        "value": ""
+    }, {
+        "property": "icon",
+        "value": ""
+    }],
+    "updateinterval": "30",
+    "updateIntervalType": "num",
+    "updateIntervalUnits": "minutes",
+    "outputinitially": true,
+    "outputonchanged": true,
+    "entity_id": "sensor.ams_c07fef_threshold",
+    "state_type": "num",
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "outputs": 1,
+    "x": 140,
+    "y": 2820,
+    "wires": [
+        ["311d10e8b65a8fa7"]
+    ]
+}, {
+    "id": "311d10e8b65a8fa7",
+    "type": "change",
+    "z": "3d1b0628731692ed",
+    "name": "AMS Effektledd variabel",
+    "rules": [{
+        "t": "set",
+        "p": "ams-effektledd",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 390,
+    "y": 2820,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "891d97f0251ef757",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Data fra AMS-måler for div utregninger",
+    "info": "",
+    "x": 210,
+    "y": 2760,
+    "wires": []
+}, {
+    "id": "27ed1e32b7f1b442",
+    "type": "poll-state",
+    "z": "3d1b0628731692ed",
+    "name": "AMS - Spenning",
+    "server": "ed1ce5cc.927bb8",
+    "version": 2,
+    "exposeToHomeAssistant": false,
+    "haConfig": [{
+        "property": "name",
+        "value": ""
+    }, {
+        "property": "icon",
+        "value": ""
+    }],
+    "updateinterval": "30",
+    "updateIntervalType": "num",
+    "updateIntervalUnits": "seconds",
+    "outputinitially": true,
+    "outputonchanged": true,
+    "entity_id": "sensor.ams_c07fef_u1",
+    "state_type": "num",
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "outputs": 1,
+    "x": 140,
+    "y": 2900,
+    "wires": [
+        ["17d8243ed30e8e64"]
+    ]
+}, {
+    "id": "17d8243ed30e8e64",
+    "type": "change",
+    "z": "3d1b0628731692ed",
+    "name": "AMS Spenning variabel",
+    "rules": [{
+        "t": "set",
+        "p": "ams-spenning",
+        "pt": "flow",
+        "to": "payload",
+        "tot": "msg"
+    }],
+    "action": "",
+    "property": "",
+    "from": "",
+    "to": "",
+    "reg": false,
+    "x": 390,
+    "y": 2900,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "b431a11ab1e4f8f6",
+    "type": "ps-receive-price",
+    "z": "3d1b0628731692ed",
+    "name": "Price Receiver",
+    "x": 1140,
+    "y": 2380,
+    "wires": [
+        ["9ceddc618c7ca6bc", "a906cca224f3ab5d", "6c58a04a973fd245"]
+    ]
+}, {
+    "id": "4d66bb43bc3c4cb3",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Convert true/false to 1/0",
+    "func": "msg.payload.hours.forEach(h => h.onOff = h.onOff ? \"1\" : \"0\")\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2270,
+    "y": 2600,
+    "wires": [
+        ["b43fcf533b4976b4"]
+    ]
+}, {
+    "id": "b43fcf533b4976b4",
+    "type": "ha-sensor",
+    "z": "3d1b0628731692ed",
+    "name": "Info fra PS til HA",
+    "entityConfig": "2e6815ef9222900c",
+    "version": 0,
+    "state": "payload",
+    "stateType": "str",
+    "attributes": [{
+        "property": "Schedule",
+        "value": "payload.schedule",
+        "valueType": "msg"
+    }, {
+        "property": "Hours",
+        "value": "payload.hours",
+        "valueType": "msg"
+    }, {
+        "property": "Control",
+        "value": "payload.hours[0].onOff",
+        "valueType": "str"
+    }, {
+        "property": "Current",
+        "value": "payload.current",
+        "valueType": "str"
+    }],
+    "inputOverride": "allow",
+    "outputProperties": [],
+    "x": 2240,
+    "y": 2680,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "95c09fdecc90c801",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "NordPool",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "sensor.nordpool_kwh_tromso_nok_3_10_0",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 940,
+    "y": 2380,
+    "wires": [
+        ["b431a11ab1e4f8f6"]
+    ]
+}, {
+    "id": "b3d3d0c29c38779e",
+    "type": "ps-strategy-lowest-price",
+    "z": "3d1b0628731692ed",
+    "name": "Lading på ettermiddag / natt",
+    "fromTime": "20",
+    "toTime": "08",
+    "hoursOn": "0",
+    "maxPrice": "",
+    "doNotSplit": false,
+    "sendCurrentValueWhenRescheduling": true,
+    "outputValueForOn": "true",
+    "outputValueForOff": "false",
+    "outputValueForOntype": "bool",
+    "outputValueForOfftype": "bool",
+    "outputIfNoSchedule": "false",
+    "outputOutsidePeriod": "false",
+    "contextStorage": "memory",
+    "x": 1400,
+    "y": 2480,
+    "wires": [
+        [],
+        [],
+        ["39faa610285063a9"]
+    ]
+}, {
+    "id": "f9f9eb1299e69e5b",
+    "type": "api-call-service",
+    "z": "3d1b0628731692ed",
+    "name": "Lade Tesla",
+    "server": "ed1ce5cc.927bb8",
+    "version": 5,
+    "debugenabled": false,
+    "domain": "input_boolean",
+    "service": "turn_on",
+    "areaId": [],
+    "deviceId": [],
+    "entityId": ["input_boolean.automasjon_powersaver_lade_tesla"],
+    "data": "",
+    "dataType": "jsonata",
+    "mergeContext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 2230,
+    "y": 2420,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "fd64c215a1ae74d2",
+    "type": "api-call-service",
+    "z": "3d1b0628731692ed",
+    "name": "Ikke lade Tesla",
+    "server": "ed1ce5cc.927bb8",
+    "version": 5,
+    "debugenabled": false,
+    "domain": "input_boolean",
+    "service": "turn_off",
+    "areaId": [],
+    "deviceId": [],
+    "entityId": ["input_boolean.automasjon_powersaver_lade_tesla"],
+    "data": "",
+    "dataType": "jsonata",
+    "mergeContext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 2240,
+    "y": 2500,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "ad6ed556623bedcf",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Powersaver",
+    "info": "",
+    "x": 1550,
+    "y": 2240,
+    "wires": []
+}, {
+    "id": "d2081fb25c781d09",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Batteri %",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "sensor.tesla_model_3_battery",
+    "state_type": "num",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 1700,
+    "y": 1980,
+    "wires": [
+        ["fb495ee5a93a4915"]
+    ]
+}, {
+    "id": "fb495ee5a93a4915",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Lagrer batteri % til flow variabel",
+    "func": "\n// @ts-ignore\nflow.set(\"Tesla_Batteri_Prosent\", msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2110,
+    "y": 1980,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "82c00c944e7ec629",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Batteri ladegrense",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 1,
+    "halt_if": "",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "number.tesla_model_3_charge_limit",
+    "state_type": "num",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 1730,
+    "y": 2060,
+    "wires": [
+        ["bfea4191303b3289"]
+    ]
+}, {
+    "id": "bfea4191303b3289",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Lagrer batteri ladegrense til flow variabel",
+    "func": "\n// @ts-ignore\nflow.set(\"Tesla_Batteri_Ladegrense\", msg.payload);\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2140,
+    "y": 2060,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "81a55f696246240f",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Kalkulerer hvor lang tid bilen må lade",
+    "func": "// @ts-ignore\nvar Effektledd = flow.get([\"ams-effektledd\"]);\n// @ts-ignore\nvar Tesla_Batteri_Prosent = flow.get([\"Tesla_Batteri_Prosent\"]);\n// @ts-ignore\nvar Tesla_Batteri_Ladegrense = flow.get([\"Tesla_Batteri_Ladegrense\"]);\n\n//Batteristørrelse på Tesla\nvar Tesla_Batteri_KWh = 82;\n\n//Estimerer hva sannsynlig ladehastighet er\nif (Effektledd == 5) {\n   var MaksKW = 4;\n}\nelse if (Effektledd == 10) {\n   var MaksKW = 7;\n}\n\n//Finne ut hvor mange % bilen må lades.\nvar Tesla_Behov_Opplading_Prosent = Tesla_Batteri_Ladegrense - Tesla_Batteri_Prosent;\n\n//Finne ut hvor mange KWh bilen må lades for å nå ladegrense.\nvar Tesla_Behov_Opplading_KWh = Tesla_Batteri_KWh * (Tesla_Behov_Opplading_Prosent / 100);\n\n//Finne ut hvor lang tid ladingen tar.\nvar Lading_Tidsestimat = Tesla_Behov_Opplading_KWh / MaksKW;\n\nif(Lading_Tidsestimat == Infinity ) {\n   Lading_Tidsestimat = null;\n}\n\nLading_Tidsestimat = Math.ceil(Lading_Tidsestimat);\n\nLading_Tidsestimat = { \"config\": { \"hoursOn\": Lading_Tidsestimat } }\n\n// @ts-ignore\nflow.set(\"Lading_Tidsestimat\", Lading_Tidsestimat);\n\nmsg.payload = Lading_Tidsestimat;\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 2130,
+    "y": 2140,
+    "wires": [
+        ["03d59a8aecd134c3"]
+    ]
+}, {
+    "id": "0f9bc9120b06499e",
+    "type": "join",
+    "z": "3d1b0628731692ed",
+    "name": "Join ladetid",
+    "mode": "custom",
+    "build": "merged",
+    "property": "payload",
+    "propertyType": "msg",
+    "key": "topic",
+    "joiner": "\\n",
+    "joinerType": "str",
+    "accumulate": false,
+    "timeout": "",
+    "count": "2",
+    "reduceRight": false,
+    "reduceExp": "",
+    "reduceInit": "",
+    "reduceInitType": "num",
+    "reduceFixup": "",
+    "x": 1770,
+    "y": 2380,
+    "wires": [
+        ["b3d3d0c29c38779e", "86a17b81e45fa543"]
+    ]
+}, {
+    "id": "55ab98c87d483250",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "pauseType": "delay",
+    "timeout": "2",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1680,
+    "y": 2140,
+    "wires": [
+        ["81a55f696246240f"]
+    ]
+}, {
+    "id": "2b787e7c974acb32",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "pauseType": "delay",
+    "timeout": "10",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 680,
+    "y": 2380,
+    "wires": [
+        ["95c09fdecc90c801"]
+    ]
+}, {
+    "id": "9ceddc618c7ca6bc",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Ladetid",
+    "func": "// @ts-ignore\nvar Ladetid = flow.get(\"Lading_Tidsestimat\");\n\nif(Ladetid != null){\n    // @ts-ignore\n    msg.payload = Ladetid;\n    return [msg, null];\n}\n\nelse\n// @ts-ignore\nmsg.payload = null;\nreturn [null, msg];\n\n",
+    "outputs": 2,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1540,
+    "y": 2320,
+    "wires": [
+        ["0f9bc9120b06499e"],
+        ["856b41a64765e37a"]
+    ]
+}, {
+    "id": "c9c1e7b0fa3bbfd2",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "pauseType": "delay",
+    "timeout": "1",
+    "timeoutUnits": "seconds",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1540,
+    "y": 2380,
+    "wires": [
+        ["0f9bc9120b06499e"]
+    ]
+}, {
+    "id": "32831bdf09a2055d",
+    "type": "ps-strategy-fixed-schedule",
+    "z": "3d1b0628731692ed",
+    "name": "Gi bilen strøm før jobbavreise",
+    "periods": [{
+        "start": "06",
+        "value": "true"
+    }, {
+        "start": "08",
+        "value": "false"
+    }],
+    "validFrom": "",
+    "validTo": "",
+    "days": {
+        "Mon": true,
+        "Tue": true,
+        "Wed": true,
+        "Thu": true,
+        "Fri": true,
+        "Sat": false,
+        "Sun": false
+    },
+    "sendCurrentValueWhenRescheduling": true,
+    "outputValueForOn": "true",
+    "outputValueForOff": "false",
+    "outputValueForOntype": "bool",
+    "outputValueForOfftype": "bool",
+    "outputIfNoSchedule": "false",
+    "contextStorage": "memory",
+    "x": 1410,
+    "y": 2640,
+    "wires": [
+        [],
+        [],
+        ["39faa610285063a9"]
+    ]
+}, {
+    "id": "39faa610285063a9",
+    "type": "ps-schedule-merger",
+    "z": "3d1b0628731692ed",
+    "name": "Schedule Merger",
+    "outputIfNoSchedule": "false",
+    "logicFunction": "OR",
+    "schedulingDelay": "100",
+    "sendCurrentValueWhenRescheduling": true,
+    "outputValueForOn": "true",
+    "outputValueForOff": "false",
+    "outputValueForOntype": "bool",
+    "outputValueForOfftype": "bool",
+    "x": 1790,
+    "y": 2480,
+    "wires": [
+        ["f9f9eb1299e69e5b"],
+        ["fd64c215a1ae74d2"],
+        ["4d66bb43bc3c4cb3", "9cb48139df680766"]
+    ]
+}, {
+    "id": "9cb48139df680766",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ladetid",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2220,
+    "y": 2760,
+    "wires": []
+}, {
+    "id": "a906cca224f3ab5d",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Skal jeg på jobb?",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "on",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.jobb",
+    "state_type": "str",
+    "blockInputOverrides": true,
+    "outputProperties": [],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 1130,
+    "y": 2640,
+    "wires": [
+        ["32831bdf09a2055d"],
+        []
+    ]
+}, {
+    "id": "ef3ec8d87ed0fa1a",
+    "type": "trigger-state",
+    "z": "3d1b0628731692ed",
+    "name": "Er Tesla hjemme?",
+    "server": "ed1ce5cc.927bb8",
+    "version": 2,
+    "exposeToHomeAssistant": false,
+    "haConfig": [{
+        "property": "name",
+        "value": ""
+    }, {
+        "property": "icon",
+        "value": ""
+    }],
+    "entityid": "device_tracker.tesla_model_3_location_tracker",
+    "entityidfiltertype": "exact",
+    "debugenabled": false,
+    "constraints": [{
+        "targetType": "this_entity",
+        "targetValue": "",
+        "propertyType": "current_state",
+        "propertyValue": "new_state.state",
+        "comparatorType": "is",
+        "comparatorValueDatatype": "str",
+        "comparatorValue": "home"
+    }],
+    "inputs": 0,
+    "outputs": 2,
+    "customoutputs": [],
+    "outputinitially": true,
+    "state_type": "str",
+    "enableInput": false,
+    "x": 1080,
+    "y": 2100,
+    "wires": [
+        ["d2081fb25c781d09", "82c00c944e7ec629", "55ab98c87d483250", "2b787e7c974acb32"],
+        []
+    ]
+}, {
+    "id": "856b41a64765e37a",
+    "type": "delay",
+    "z": "3d1b0628731692ed",
+    "name": "Loop til ladetid er satt",
+    "pauseType": "delay",
+    "timeout": "5",
+    "timeoutUnits": "minutes",
+    "rate": "1",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1800,
+    "y": 2320,
+    "wires": [
+        ["95c09fdecc90c801"]
+    ]
+}, {
+    "id": "3b730f4db69c700a",
+    "type": "inject",
+    "z": "3d1b0628731692ed",
+    "name": "Manuel utløser",
+    "props": [{
+        "p": "payload"
+    }, {
+        "p": "topic",
+        "vt": "str"
+    }],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": "10",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 700,
+    "y": 2480,
+    "wires": [
+        ["95c09fdecc90c801"]
+    ]
+}, {
+    "id": "6625e777890f5fad",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Kalkuler hvor lang tid bilen må lade",
+    "info": "",
+    "x": 1600,
+    "y": 1900,
+    "wires": []
+}, {
+    "id": "03d59a8aecd134c3",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ladetid",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2420,
+    "y": 2140,
+    "wires": []
+}, {
+    "id": "6c58a04a973fd245",
+    "type": "ps-general-add-tariff",
+    "z": "3d1b0628731692ed",
+    "name": "Energiledd",
+    "periods": [{
+        "start": "22",
+        "value": "0,18"
+    }, {
+        "start": "06",
+        "value": "0,23"
+    }],
+    "validFrom": "",
+    "validTo": "",
+    "days": {
+        "Mon": true,
+        "Tue": true,
+        "Wed": true,
+        "Thu": true,
+        "Fri": true,
+        "Sat": true,
+        "Sun": true
+    },
+    "x": 1330,
+    "y": 2380,
+    "wires": [
+        ["c9c1e7b0fa3bbfd2"]
+    ]
+}, {
+    "id": "d9311c81a4595814",
+    "type": "ps-strategy-lowest-price",
+    "z": "3d1b0628731692ed",
+    "name": "Lading på dagtid",
+    "fromTime": "09",
+    "toTime": "18",
+    "hoursOn": "0",
+    "maxPrice": "",
+    "doNotSplit": false,
+    "sendCurrentValueWhenRescheduling": true,
+    "outputValueForOn": "true",
+    "outputValueForOff": "false",
+    "outputValueForOntype": "bool",
+    "outputValueForOfftype": "bool",
+    "outputIfNoSchedule": "false",
+    "outputOutsidePeriod": "false",
+    "contextStorage": "memory",
+    "x": 1470,
+    "y": 2560,
+    "wires": [
+        [],
+        [],
+        ["39faa610285063a9"]
+    ]
+}, {
+    "id": "3afed16ca4e9d7b4",
+    "type": "inject",
+    "z": "3d1b0628731692ed",
+    "name": "Trigges på morgenen kl 0900",
+    "props": [{
+        "p": "payload"
+    }, {
+        "p": "topic",
+        "vt": "str"
+    }],
+    "repeat": "",
+    "crontab": "00 09 * * *",
+    "once": false,
+    "onceDelay": "10",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 1150,
+    "y": 1980,
+    "wires": [
+        ["d2081fb25c781d09", "82c00c944e7ec629", "55ab98c87d483250", "2b787e7c974acb32"]
+    ]
+}, {
+    "id": "f287c54d83cbc529",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Powersave - Lade Tesla?",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "true",
+    "halt_if_type": "bool",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.automasjon_powersaver_lade_tesla",
+    "state_type": "habool",
+    "blockInputOverrides": true,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 910,
+    "y": 1140,
+    "wires": [
+        ["76a0393ad471b263"],
+        ["05f7a89370b70f9e"]
+    ]
+}, {
+    "id": "7ad5a8fb19f7d7eb",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Manuelt lading er aktivert",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "on",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.tesla_lading_manuelt",
+    "state_type": "str",
+    "blockInputOverrides": true,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 930,
+    "y": 1060,
+    "wires": [
+        ["76a0393ad471b263"],
+        ["f287c54d83cbc529"]
+    ]
+}, {
+    "id": "dc81f874aabedf28",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Ny ampere er under 6A, pauser ladingen.",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1740,
+    "y": 920,
+    "wires": []
+}, {
+    "id": "86a17b81e45fa543",
+    "type": "time-range-switch",
+    "z": "3d1b0628731692ed",
+    "name": "",
+    "lat": "68.56584",
+    "lon": "14.89425",
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "startOffset": 0,
+    "endOffset": 0,
+    "x": 1250,
+    "y": 2560,
+    "wires": [
+        ["d9311c81a4595814"],
+        []
+    ]
+}, {
+    "id": "aaaa3968d6f1506f",
+    "type": "function",
+    "z": "3d1b0628731692ed",
+    "name": "Sjekk på at det er nok ledig strøm tilgjengelig iht effektleddet.",
+    "func": "// @ts-ignore\nvar accessToken = flow.get([\"accessToken\"]);\n\n//Effektledd i fra AMS-måleren\n// @ts-ignore\nvar Effektledd = flow.get([\"ams-effektledd\"]);\n\n//Aktuell effekt fra AMS\n// @ts-ignore\nconst ha = global.get('homeassistant').homeAssistant.states;\nvar AMS_Watt = ha[\"sensor.ams_c07fef_p\"].state;\n\n//Maks strømforbruk Totalt\nvar MaksWatt = null;\nif (Effektledd == 5) {\n    MaksWatt = 4500; \n    }\nelse if (Effektledd == 10 ) {\n    MaksWatt = 9000; \n    }\n\nif(Effektledd == 5 && AMS_Watt > 4500)\n    {\n    // @ts-ignore\n    msg.payload = \"For lite ledig effekt, ikke start lading\"\n    return [msg, null];\n    }\nelse if(Effektledd == 10 && AMS_Watt > 9000)\n    {\n    // @ts-ignore\n    msg.payload = \"For lite ledig effekt, ikke start lading\"\n    return [msg, null];\n    }\nelse\n    {\n    // @ts-ignore\n    msg.payload = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers = {};\n    // @ts-ignore\n    msg.headers['Authorization'] = 'Bearer ' + accessToken;\n    // @ts-ignore\n    msg.headers['Accept'] = 'Application/json';\n    return [null, msg];\n }",
+    "outputs": 2,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 300,
+    "y": 1580,
+    "wires": [
+        ["4010dca366a3293d"],
+        ["536a57ef1519e07d"]
+    ]
+}, {
+    "id": "4010dca366a3293d",
+    "type": "debug",
+    "z": "3d1b0628731692ed",
+    "name": "Lading ikke startet, for lite strøm tilgjengelig.",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 350,
+    "y": 1520,
+    "wires": []
+}, {
+    "id": "7a30741ccb192ba2",
+    "type": "comment",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Slå av manuell lading når bilen forlater hjem.",
+    "info": "",
+    "x": 250,
+    "y": 3040,
+    "wires": []
+}, {
+    "id": "0cdb51b9dd272500",
+    "type": "trigger-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla forlater hjem",
+    "server": "ed1ce5cc.927bb8",
+    "version": 2,
+    "exposeToHomeAssistant": false,
+    "haConfig": [{
+        "property": "name",
+        "value": ""
+    }, {
+        "property": "icon",
+        "value": ""
+    }],
+    "entityid": "device_tracker.tesla_model_3_location_tracker",
+    "entityidfiltertype": "exact",
+    "debugenabled": false,
+    "constraints": [{
+        "targetType": "this_entity",
+        "targetValue": "",
+        "propertyType": "previous_state",
+        "propertyValue": "old_state.state",
+        "comparatorType": "is",
+        "comparatorValueDatatype": "str",
+        "comparatorValue": "not_home"
+    }, {
+        "targetType": "this_entity",
+        "targetValue": "",
+        "propertyType": "current_state",
+        "propertyValue": "new_state.state",
+        "comparatorType": "is",
+        "comparatorValueDatatype": "str",
+        "comparatorValue": "home"
+    }],
+    "inputs": 0,
+    "outputs": 2,
+    "customoutputs": [],
+    "outputinitially": false,
+    "state_type": "str",
+    "enableInput": false,
+    "x": 150,
+    "y": 3120,
+    "wires": [
+        ["12e9cb441b152c7b"],
+        []
+    ]
+}, {
+    "id": "12e9cb441b152c7b",
+    "type": "api-current-state",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Manuelt lading er aktivert",
+    "server": "ed1ce5cc.927bb8",
+    "version": 3,
+    "outputs": 2,
+    "halt_if": "on",
+    "halt_if_type": "str",
+    "halt_if_compare": "is",
+    "entity_id": "input_boolean.tesla_lading_manuelt",
+    "state_type": "str",
+    "blockInputOverrides": false,
+    "outputProperties": [{
+        "property": "payload",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entityState"
+    }, {
+        "property": "data",
+        "propertyType": "msg",
+        "value": "",
+        "valueType": "entity"
+    }],
+    "for": "0",
+    "forType": "num",
+    "forUnits": "minutes",
+    "override_topic": false,
+    "state_location": "payload",
+    "override_payload": "msg",
+    "entity_location": "data",
+    "override_data": "msg",
+    "x": 190,
+    "y": 3200,
+    "wires": [
+        ["8618d4309f7104b1"],
+        []
+    ]
+}, {
+    "id": "8618d4309f7104b1",
+    "type": "api-call-service",
+    "z": "3d1b0628731692ed",
+    "name": "Tesla - Deaktiver manuell lading",
+    "server": "ed1ce5cc.927bb8",
+    "version": 5,
+    "debugenabled": false,
+    "domain": "input_boolean",
+    "service": "turn_off",
+    "areaId": [],
+    "deviceId": [],
+    "entityId": ["input_boolean.tesla_lading_manuelt"],
+    "data": "",
+    "dataType": "jsonata",
+    "mergeContext": "",
+    "mustacheAltTags": false,
+    "outputProperties": [],
+    "queue": "none",
+    "x": 190,
+    "y": 3280,
+    "wires": [
+        []
+    ]
+}, {
+    "id": "a8300a35f1aeb137",
+    "type": "inject",
+    "z": "3d1b0628731692ed",
+    "name": "Loop à 2min",
+    "props": [{
+        "p": "payload"
+    }, {
+        "p": "topic",
+        "vt": "str"
+    }],
+    "repeat": "120",
+    "crontab": "",
+    "once": true,
+    "onceDelay": "30",
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 190,
+    "y": 760,
+    "wires": [
+        ["890b2ccb5a7d9b45"]
+    ]
+}, {
+    "id": "d2be3a070d2c8c37",
+    "type": "tls-config",
+    "name": "Easee",
+    "cert": "",
+    "key": "",
+    "ca": "",
+    "certname": "",
+    "keyname": "",
+    "caname": "Amazon Root CA 1.cer",
+    "servername": "",
+    "verifyservercert": false,
+    "alpnprotocol": ""
+}, {
+    "id": "ed1ce5cc.927bb8",
+    "type": "server",
+    "name": "Home Assistant",
+    "version": 5,
+    "addon": true,
+    "rejectUnauthorizedCerts": true,
+    "ha_boolean": "y|yes|true|on|home|open",
+    "connectionDelay": true,
+    "cacheJson": true,
+    "heartbeat": false,
+    "heartbeatInterval": "30",
+    "areaSelector": "friendlyName",
+    "deviceSelector": "friendlyName",
+    "entitySelector": "friendlyName",
+    "statusSeparator": "at: ",
+    "statusYear": "hidden",
+    "statusMonth": "short",
+    "statusDay": "numeric",
+    "statusHourCycle": "h23",
+    "statusTimeFormat": "h:m",
+    "enableGlobalContextStore": true
+}, {
+    "id": "2e6815ef9222900c",
+    "type": "ha-entity-config",
+    "server": "ed1ce5cc.927bb8",
+    "deviceConfig": "",
+    "name": "powersaver-elbil",
+    "version": "6",
+    "entityType": "sensor",
+    "haConfig": [{
+        "property": "name",
+        "value": "powersaver-elbil"
+    }, {
+        "property": "icon",
+        "value": ""
+    }, {
+        "property": "entity_category",
+        "value": ""
+    }, {
+        "property": "entity_picture",
+        "value": ""
+    }, {
+        "property": "device_class",
+        "value": ""
+    }, {
+        "property": "unit_of_measurement",
+        "value": ""
+    }, {
+        "property": "state_class",
+        "value": ""
+    }],
+    "resend": false,
+    "debugEnabled": false
+}]
